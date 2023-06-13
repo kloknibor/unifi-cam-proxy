@@ -1,43 +1,44 @@
+# Set the base image and arguments
 ARG version=3.9
-ARG tag=${version}-alpine3.17
+ARG tag=${version}-bullseye
 
-FROM python:${tag} as builder
-WORKDIR /app
+# Set up the environment
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 
-RUN apk add --update \
-        cargo \
-        git \
-        gcc \
-        g++ \
-        jpeg-dev \
-        libc-dev \
-        linux-headers \
-        musl-dev \
-        patchelf \
-        rust \
-        zlib-dev
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    libjpeg-dev \
+    libffi-dev \
+    libssl-dev \
+    patchelf \
+    rustc \
+    cargo \
+    zlib1g-dev \
+    ffmpeg \
+    netcat-openbsd \
+    libusb-dev
 
-RUN pip install -U pip wheel setuptools maturin
-COPY requirements.txt .
-RUN pip install -r requirements.txt --no-build-isolation
-
-
-FROM python:${tag}
+# Set the working directory
 WORKDIR /app
 
-ARG version
+# Copy and install requirements
+COPY requirements.txt .
+RUN pip install -U pip wheel setuptools && \
+    pip install -r requirements.txt --no-build-isolation
 
-COPY --from=builder \
-        /usr/local/lib/python${version}/site-packages \
-        /usr/local/lib/python${version}/site-packages
-
-RUN apk add --update ffmpeg netcat-openbsd libusb-dev
-
+# Copy the application code
 COPY . .
+
+# Install the application
 RUN pip install . --no-cache-dir
 
+# Copy the entrypoint script
 COPY ./docker/entrypoint.sh /
 
+# Set the entrypoint command
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Set the default command
 CMD ["unifi-cam-proxy"]
