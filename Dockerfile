@@ -14,19 +14,18 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     patchelf \
-    rustc \
-    cargo \
     zlib1g-dev
+
+# Install a newer version of Cargo
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN pip install -U pip wheel setuptools maturin
 COPY requirements.txt .
 RUN pip install -r requirements.txt --no-build-isolation
 
 # Stage 2: Final Image
-FROM python:${tag}
 WORKDIR /app
-
-ARG version
 
 COPY --from=builder \
     /usr/local/lib/python${version}/site-packages \
