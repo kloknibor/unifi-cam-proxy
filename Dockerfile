@@ -28,13 +28,37 @@ WORKDIR /app
 
 ARG version
 
-# Install VAAPI dependencies
-RUN apk add --update \
-        ffmpeg \
-        netcat-openbsd \
-        libusb-dev \
-        libva-intel-driver \
-        intel-media-driver
+RUN apk add --update ffmpeg netcat-openbsd libusb-dev
+
+# Install VAAPI dependencies for Intel Gen 8+
+RUN apk add --no-cache --virtual .build-deps \
+        build-base \
+        libpciaccess-dev \
+        libdrm-dev \
+        autoconf \
+        automake \
+        libtool \
+        linux-headers \
+        libx11-dev \
+        libva-dev \
+        mesa-dev
+
+# Download and install Intel Media Driver
+RUN git clone https://github.com/intel/media-driver.git \
+        && cd media-driver \
+        && git checkout -b release/intel-media-21.3.4 origin/release/intel-media-21.3.4 \
+        && mkdir -p build && cd build \
+        && cmake -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TYPE=release -DMEDIA_VERSION="21.3.4" .. \
+        && make -j$(nproc) \
+        && make install
+
+# Download and install LibVA
+RUN git clone https://github.com/intel/libva.git \
+        && cd libva \
+        && git checkout -b intel-media-21.3.4 origin/intel-media-21.3.4 \
+        && ./autogen.sh --prefix=/usr --libdir=/usr/lib64 \
+        && make -j$(nproc) \
+        && make install
 
 COPY --from=builder \
         /usr/local/lib/python${version}/site-packages \
