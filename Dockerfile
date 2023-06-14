@@ -30,6 +30,9 @@ ARG version
 
 RUN apk add --update ffmpeg netcat-openbsd libusb-dev
 
+# Install Git
+RUN apk add --no-cache git
+
 # Install VAAPI dependencies for Intel Gen 8+
 RUN apk add --no-cache --virtual .build-deps \
         build-base \
