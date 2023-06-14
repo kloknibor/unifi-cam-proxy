@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     libusb-dev
 
-COPY --from=builder-application /usr/local/lib/python${version}/site-packages /usr/local/lib/python${version}/site-packages
+COPY --from=builder-application /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 
 COPY . .
 RUN pip install . --no-cache-dir
